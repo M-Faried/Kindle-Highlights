@@ -3,7 +3,6 @@
   "short_name": "Kindle Highlights",
   "start_url": ".",
   "display": "standalone",
-
   "theme_color": "#d72323",
   "background_color": "#d72323",
   "icons": [
