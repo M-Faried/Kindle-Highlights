@@ -1,20 +1,12 @@
 {
   "files": {
-    "main.css": "/Kindle-Highlights/static/css/main.0580d1ae.css",
-    "main.js": "/Kindle-Highlights/static/js/main.a8c31940.js",
-    "static/css/268.a75d6ff8.chunk.css": "/Kindle-Highlights/static/css/268.a75d6ff8.chunk.css",
-    "static/js/268.ba987843.chunk.js": "/Kindle-Highlights/static/js/268.ba987843.chunk.js",
-    "static/css/625.77849558.chunk.css": "/Kindle-Highlights/static/css/625.77849558.chunk.css",
-    "static/js/625.ef439031.chunk.js": "/Kindle-Highlights/static/js/625.ef439031.chunk.js",
-    "static/js/477.8aa22d74.chunk.js": "/Kindle-Highlights/static/js/477.8aa22d74.chunk.js",
-    "static/js/473.1bcf9275.chunk.js": "/Kindle-Highlights/static/js/473.1bcf9275.chunk.js",
-    "static/css/667.62d1d199.chunk.css": "/Kindle-Highlights/static/css/667.62d1d199.chunk.css",
-    "static/js/667.51a6b40a.chunk.js": "/Kindle-Highlights/static/js/667.51a6b40a.chunk.js",
-    "static/js/471.4787c49b.chunk.js": "/Kindle-Highlights/static/js/471.4787c49b.chunk.js",
+    "main.css": "/Kindle-Highlights/static/css/main.912174d3.css",
+    "main.js": "/Kindle-Highlights/static/js/main.b65ec390.js",
+    "static/js/473.b2a2d270.chunk.js": "/Kindle-Highlights/static/js/473.b2a2d270.chunk.js",
     "index.html": "/Kindle-Highlights/index.html"
   },
   "entrypoints": [
-    "static/css/main.0580d1ae.css",
-    "static/js/main.a8c31940.js"
+    "static/css/main.912174d3.css",
+    "static/js/main.b65ec390.js"
   ]
 }
