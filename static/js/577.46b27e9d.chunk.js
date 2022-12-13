@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkkindle_highlights=self.webpackChunkkindle_highlights||[]).push([[577],{577:function(i,t,h){h.r(t);h(313);var e=h(417);t.default=function(){return(0,e.jsx)("img",{src:"".concat("/Kindle-Highlights","/undraw_book_lover_mkck.svg"),alt:"Book Lovers",style:{maxWidth:"300px",width:"100%",height:"auto"}})}}}]);

@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkkindle_highlights=self.webpackChunkkindle_highlights||[]).push([[473],{473:function(e,s,i){i.r(s);i(313);var k=i(417);s.default=function(){return(0,k.jsx)("img",{src:"./undraw_book_lover_mkck.svg",alt:"Book Lovers",className:"kc-main-image"})}}}]);
