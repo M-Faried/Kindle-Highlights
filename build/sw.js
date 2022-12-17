@@ -1762,7 +1762,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
   };
 
   // src/sw.js
-  precacheAndRoute([{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"234ca5760caeab1de3119ef5889feb1f","url":"index.html"}]);
+  precacheAndRoute([{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"3a2ccddd2807976fd26ba58fec40d40b","url":"index.html"}]);
   var cachedStaticOrigins = [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
