@@ -1642,62 +1642,43 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     }
   };
 
-  // node_modules/workbox-strategies/plugins/cacheOkAndOpaquePlugin.js
-  var cacheOkAndOpaquePlugin = {
-    cacheWillUpdate: async ({ response }) => {
-      if (response.status === 200 || response.status === 0) {
-        return response;
-      }
-      return null;
-    }
-  };
-
-  // node_modules/workbox-strategies/NetworkFirst.js
-  var NetworkFirst = class extends Strategy {
-    constructor(options = {}) {
-      super(options);
-      if (!this.plugins.some((p) => "cacheWillUpdate" in p)) {
-        this.plugins.unshift(cacheOkAndOpaquePlugin);
-      }
-      this._networkTimeoutSeconds = options.networkTimeoutSeconds || 0;
-      if (true) {
-        if (this._networkTimeoutSeconds) {
-          finalAssertExports.isType(this._networkTimeoutSeconds, "number", {
-            moduleName: "workbox-strategies",
-            className: this.constructor.name,
-            funcName: "constructor",
-            paramName: "networkTimeoutSeconds"
-          });
-        }
-      }
-    }
+  // node_modules/workbox-strategies/CacheFirst.js
+  var CacheFirst = class extends Strategy {
     async _handle(request, handler) {
       const logs = [];
       if (true) {
         finalAssertExports.isInstance(request, Request, {
           moduleName: "workbox-strategies",
           className: this.constructor.name,
-          funcName: "handle",
-          paramName: "makeRequest"
+          funcName: "makeRequest",
+          paramName: "request"
         });
       }
-      const promises = [];
-      let timeoutId;
-      if (this._networkTimeoutSeconds) {
-        const { id, promise } = this._getTimeoutPromise({ request, logs, handler });
-        timeoutId = id;
-        promises.push(promise);
+      let response = await handler.cacheMatch(request);
+      let error = void 0;
+      if (!response) {
+        if (true) {
+          logs.push(`No response found in the '${this.cacheName}' cache. Will respond with a network request.`);
+        }
+        try {
+          response = await handler.fetchAndCachePut(request);
+        } catch (err) {
+          if (err instanceof Error) {
+            error = err;
+          }
+        }
+        if (true) {
+          if (response) {
+            logs.push(`Got response from network.`);
+          } else {
+            logs.push(`Unable to get a response from the network.`);
+          }
+        }
+      } else {
+        if (true) {
+          logs.push(`Found a cached response in the '${this.cacheName}' cache.`);
+        }
       }
-      const networkPromise = this._getNetworkPromise({
-        timeoutId,
-        request,
-        logs,
-        handler
-      });
-      promises.push(networkPromise);
-      const response = await handler.waitUntil((async () => {
-        return await handler.waitUntil(Promise.race(promises)) || await networkPromise;
-      })());
       if (true) {
         logger.groupCollapsed(messages2.strategyStart(this.constructor.name, request));
         for (const log of logs) {
@@ -1707,57 +1688,549 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         logger.groupEnd();
       }
       if (!response) {
-        throw new WorkboxError("no-response", { url: request.url });
+        throw new WorkboxError("no-response", { url: request.url, error });
       }
       return response;
     }
-    _getTimeoutPromise({ request, logs, handler }) {
-      let timeoutId;
-      const timeoutPromise = new Promise((resolve) => {
-        const onNetworkTimeout = async () => {
-          if (true) {
-            logs.push(`Timing out the network response at ${this._networkTimeoutSeconds} seconds.`);
-          }
-          resolve(await handler.cacheMatch(request));
-        };
-        timeoutId = setTimeout(onNetworkTimeout, this._networkTimeoutSeconds * 1e3);
-      });
-      return {
-        promise: timeoutPromise,
-        id: timeoutId
+  };
+
+  // node_modules/workbox-core/_private/dontWaitFor.js
+  function dontWaitFor(promise) {
+    void promise.then(() => {
+    });
+  }
+
+  // node_modules/idb/build/wrap-idb-value.js
+  var instanceOfAny = (object, constructors) => constructors.some((c) => object instanceof c);
+  var idbProxyableTypes;
+  var cursorAdvanceMethods;
+  function getIdbProxyableTypes() {
+    return idbProxyableTypes || (idbProxyableTypes = [
+      IDBDatabase,
+      IDBObjectStore,
+      IDBIndex,
+      IDBCursor,
+      IDBTransaction
+    ]);
+  }
+  function getCursorAdvanceMethods() {
+    return cursorAdvanceMethods || (cursorAdvanceMethods = [
+      IDBCursor.prototype.advance,
+      IDBCursor.prototype.continue,
+      IDBCursor.prototype.continuePrimaryKey
+    ]);
+  }
+  var cursorRequestMap = /* @__PURE__ */ new WeakMap();
+  var transactionDoneMap = /* @__PURE__ */ new WeakMap();
+  var transactionStoreNamesMap = /* @__PURE__ */ new WeakMap();
+  var transformCache = /* @__PURE__ */ new WeakMap();
+  var reverseTransformCache = /* @__PURE__ */ new WeakMap();
+  function promisifyRequest(request) {
+    const promise = new Promise((resolve, reject) => {
+      const unlisten = () => {
+        request.removeEventListener("success", success);
+        request.removeEventListener("error", error);
+      };
+      const success = () => {
+        resolve(wrap(request.result));
+        unlisten();
+      };
+      const error = () => {
+        reject(request.error);
+        unlisten();
+      };
+      request.addEventListener("success", success);
+      request.addEventListener("error", error);
+    });
+    promise.then((value) => {
+      if (value instanceof IDBCursor) {
+        cursorRequestMap.set(value, request);
+      }
+    }).catch(() => {
+    });
+    reverseTransformCache.set(promise, request);
+    return promise;
+  }
+  function cacheDonePromiseForTransaction(tx) {
+    if (transactionDoneMap.has(tx))
+      return;
+    const done = new Promise((resolve, reject) => {
+      const unlisten = () => {
+        tx.removeEventListener("complete", complete);
+        tx.removeEventListener("error", error);
+        tx.removeEventListener("abort", error);
+      };
+      const complete = () => {
+        resolve();
+        unlisten();
+      };
+      const error = () => {
+        reject(tx.error || new DOMException("AbortError", "AbortError"));
+        unlisten();
+      };
+      tx.addEventListener("complete", complete);
+      tx.addEventListener("error", error);
+      tx.addEventListener("abort", error);
+    });
+    transactionDoneMap.set(tx, done);
+  }
+  var idbProxyTraps = {
+    get(target, prop, receiver) {
+      if (target instanceof IDBTransaction) {
+        if (prop === "done")
+          return transactionDoneMap.get(target);
+        if (prop === "objectStoreNames") {
+          return target.objectStoreNames || transactionStoreNamesMap.get(target);
+        }
+        if (prop === "store") {
+          return receiver.objectStoreNames[1] ? void 0 : receiver.objectStore(receiver.objectStoreNames[0]);
+        }
+      }
+      return wrap(target[prop]);
+    },
+    set(target, prop, value) {
+      target[prop] = value;
+      return true;
+    },
+    has(target, prop) {
+      if (target instanceof IDBTransaction && (prop === "done" || prop === "store")) {
+        return true;
+      }
+      return prop in target;
+    }
+  };
+  function replaceTraps(callback) {
+    idbProxyTraps = callback(idbProxyTraps);
+  }
+  function wrapFunction(func) {
+    if (func === IDBDatabase.prototype.transaction && !("objectStoreNames" in IDBTransaction.prototype)) {
+      return function(storeNames, ...args) {
+        const tx = func.call(unwrap(this), storeNames, ...args);
+        transactionStoreNamesMap.set(tx, storeNames.sort ? storeNames.sort() : [storeNames]);
+        return wrap(tx);
       };
     }
-    async _getNetworkPromise({ timeoutId, request, logs, handler }) {
-      let error;
-      let response;
-      try {
-        response = await handler.fetchAndCachePut(request);
-      } catch (fetchError) {
-        if (fetchError instanceof Error) {
-          error = fetchError;
-        }
+    if (getCursorAdvanceMethods().includes(func)) {
+      return function(...args) {
+        func.apply(unwrap(this), args);
+        return wrap(cursorRequestMap.get(this));
+      };
+    }
+    return function(...args) {
+      return wrap(func.apply(unwrap(this), args));
+    };
+  }
+  function transformCachableValue(value) {
+    if (typeof value === "function")
+      return wrapFunction(value);
+    if (value instanceof IDBTransaction)
+      cacheDonePromiseForTransaction(value);
+    if (instanceOfAny(value, getIdbProxyableTypes()))
+      return new Proxy(value, idbProxyTraps);
+    return value;
+  }
+  function wrap(value) {
+    if (value instanceof IDBRequest)
+      return promisifyRequest(value);
+    if (transformCache.has(value))
+      return transformCache.get(value);
+    const newValue = transformCachableValue(value);
+    if (newValue !== value) {
+      transformCache.set(value, newValue);
+      reverseTransformCache.set(newValue, value);
+    }
+    return newValue;
+  }
+  var unwrap = (value) => reverseTransformCache.get(value);
+
+  // node_modules/idb/build/index.js
+  function openDB(name, version, { blocked, upgrade, blocking, terminated } = {}) {
+    const request = indexedDB.open(name, version);
+    const openPromise = wrap(request);
+    if (upgrade) {
+      request.addEventListener("upgradeneeded", (event) => {
+        upgrade(wrap(request.result), event.oldVersion, event.newVersion, wrap(request.transaction), event);
+      });
+    }
+    if (blocked) {
+      request.addEventListener("blocked", (event) => blocked(
+        event.oldVersion,
+        event.newVersion,
+        event
+      ));
+    }
+    openPromise.then((db) => {
+      if (terminated)
+        db.addEventListener("close", () => terminated());
+      if (blocking) {
+        db.addEventListener("versionchange", (event) => blocking(event.oldVersion, event.newVersion, event));
       }
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+    }).catch(() => {
+    });
+    return openPromise;
+  }
+  function deleteDB(name, { blocked } = {}) {
+    const request = indexedDB.deleteDatabase(name);
+    if (blocked) {
+      request.addEventListener("blocked", (event) => blocked(
+        event.oldVersion,
+        event
+      ));
+    }
+    return wrap(request).then(() => void 0);
+  }
+  var readMethods = ["get", "getKey", "getAll", "getAllKeys", "count"];
+  var writeMethods = ["put", "add", "delete", "clear"];
+  var cachedMethods = /* @__PURE__ */ new Map();
+  function getMethod(target, prop) {
+    if (!(target instanceof IDBDatabase && !(prop in target) && typeof prop === "string")) {
+      return;
+    }
+    if (cachedMethods.get(prop))
+      return cachedMethods.get(prop);
+    const targetFuncName = prop.replace(/FromIndex$/, "");
+    const useIndex = prop !== targetFuncName;
+    const isWrite = writeMethods.includes(targetFuncName);
+    if (!(targetFuncName in (useIndex ? IDBIndex : IDBObjectStore).prototype) || !(isWrite || readMethods.includes(targetFuncName))) {
+      return;
+    }
+    const method = async function(storeName, ...args) {
+      const tx = this.transaction(storeName, isWrite ? "readwrite" : "readonly");
+      let target2 = tx.store;
+      if (useIndex)
+        target2 = target2.index(args.shift());
+      return (await Promise.all([
+        target2[targetFuncName](...args),
+        isWrite && tx.done
+      ]))[0];
+    };
+    cachedMethods.set(prop, method);
+    return method;
+  }
+  replaceTraps((oldTraps) => ({
+    ...oldTraps,
+    get: (target, prop, receiver) => getMethod(target, prop) || oldTraps.get(target, prop, receiver),
+    has: (target, prop) => !!getMethod(target, prop) || oldTraps.has(target, prop)
+  }));
+
+  // node_modules/workbox-expiration/_version.js
+  try {
+    self["workbox:expiration:6.5.3"] && _();
+  } catch (e) {
+  }
+
+  // node_modules/workbox-expiration/models/CacheTimestampsModel.js
+  var DB_NAME = "workbox-expiration";
+  var CACHE_OBJECT_STORE = "cache-entries";
+  var normalizeURL = (unNormalizedUrl) => {
+    const url = new URL(unNormalizedUrl, location.href);
+    url.hash = "";
+    return url.href;
+  };
+  var CacheTimestampsModel = class {
+    constructor(cacheName) {
+      this._db = null;
+      this._cacheName = cacheName;
+    }
+    _upgradeDb(db) {
+      const objStore = db.createObjectStore(CACHE_OBJECT_STORE, { keyPath: "id" });
+      objStore.createIndex("cacheName", "cacheName", { unique: false });
+      objStore.createIndex("timestamp", "timestamp", { unique: false });
+    }
+    _upgradeDbAndDeleteOldDbs(db) {
+      this._upgradeDb(db);
+      if (this._cacheName) {
+        void deleteDB(this._cacheName);
       }
-      if (true) {
-        if (response) {
-          logs.push(`Got response from network.`);
-        } else {
-          logs.push(`Unable to get a response from the network. Will respond with a cached response.`);
-        }
-      }
-      if (error || !response) {
-        response = await handler.cacheMatch(request);
-        if (true) {
-          if (response) {
-            logs.push(`Found a cached response in the '${this.cacheName}' cache.`);
+    }
+    async setTimestamp(url, timestamp) {
+      url = normalizeURL(url);
+      const entry = {
+        url,
+        timestamp,
+        cacheName: this._cacheName,
+        id: this._getId(url)
+      };
+      const db = await this.getDb();
+      const tx = db.transaction(CACHE_OBJECT_STORE, "readwrite", {
+        durability: "relaxed"
+      });
+      await tx.store.put(entry);
+      await tx.done;
+    }
+    async getTimestamp(url) {
+      const db = await this.getDb();
+      const entry = await db.get(CACHE_OBJECT_STORE, this._getId(url));
+      return entry === null || entry === void 0 ? void 0 : entry.timestamp;
+    }
+    async expireEntries(minTimestamp, maxCount) {
+      const db = await this.getDb();
+      let cursor = await db.transaction(CACHE_OBJECT_STORE).store.index("timestamp").openCursor(null, "prev");
+      const entriesToDelete = [];
+      let entriesNotDeletedCount = 0;
+      while (cursor) {
+        const result = cursor.value;
+        if (result.cacheName === this._cacheName) {
+          if (minTimestamp && result.timestamp < minTimestamp || maxCount && entriesNotDeletedCount >= maxCount) {
+            entriesToDelete.push(cursor.value);
           } else {
-            logs.push(`No response found in the '${this.cacheName}' cache.`);
+            entriesNotDeletedCount++;
           }
         }
+        cursor = await cursor.continue();
       }
-      return response;
+      const urlsDeleted = [];
+      for (const entry of entriesToDelete) {
+        await db.delete(CACHE_OBJECT_STORE, entry.id);
+        urlsDeleted.push(entry.url);
+      }
+      return urlsDeleted;
+    }
+    _getId(url) {
+      return this._cacheName + "|" + normalizeURL(url);
+    }
+    async getDb() {
+      if (!this._db) {
+        this._db = await openDB(DB_NAME, 1, {
+          upgrade: this._upgradeDbAndDeleteOldDbs.bind(this)
+        });
+      }
+      return this._db;
+    }
+  };
+
+  // node_modules/workbox-expiration/CacheExpiration.js
+  var CacheExpiration = class {
+    constructor(cacheName, config = {}) {
+      this._isRunning = false;
+      this._rerunRequested = false;
+      if (true) {
+        finalAssertExports.isType(cacheName, "string", {
+          moduleName: "workbox-expiration",
+          className: "CacheExpiration",
+          funcName: "constructor",
+          paramName: "cacheName"
+        });
+        if (!(config.maxEntries || config.maxAgeSeconds)) {
+          throw new WorkboxError("max-entries-or-age-required", {
+            moduleName: "workbox-expiration",
+            className: "CacheExpiration",
+            funcName: "constructor"
+          });
+        }
+        if (config.maxEntries) {
+          finalAssertExports.isType(config.maxEntries, "number", {
+            moduleName: "workbox-expiration",
+            className: "CacheExpiration",
+            funcName: "constructor",
+            paramName: "config.maxEntries"
+          });
+        }
+        if (config.maxAgeSeconds) {
+          finalAssertExports.isType(config.maxAgeSeconds, "number", {
+            moduleName: "workbox-expiration",
+            className: "CacheExpiration",
+            funcName: "constructor",
+            paramName: "config.maxAgeSeconds"
+          });
+        }
+      }
+      this._maxEntries = config.maxEntries;
+      this._maxAgeSeconds = config.maxAgeSeconds;
+      this._matchOptions = config.matchOptions;
+      this._cacheName = cacheName;
+      this._timestampModel = new CacheTimestampsModel(cacheName);
+    }
+    async expireEntries() {
+      if (this._isRunning) {
+        this._rerunRequested = true;
+        return;
+      }
+      this._isRunning = true;
+      const minTimestamp = this._maxAgeSeconds ? Date.now() - this._maxAgeSeconds * 1e3 : 0;
+      const urlsExpired = await this._timestampModel.expireEntries(minTimestamp, this._maxEntries);
+      const cache = await self.caches.open(this._cacheName);
+      for (const url of urlsExpired) {
+        await cache.delete(url, this._matchOptions);
+      }
+      if (true) {
+        if (urlsExpired.length > 0) {
+          logger.groupCollapsed(`Expired ${urlsExpired.length} ${urlsExpired.length === 1 ? "entry" : "entries"} and removed ${urlsExpired.length === 1 ? "it" : "them"} from the '${this._cacheName}' cache.`);
+          logger.log(`Expired the following ${urlsExpired.length === 1 ? "URL" : "URLs"}:`);
+          urlsExpired.forEach((url) => logger.log(`    ${url}`));
+          logger.groupEnd();
+        } else {
+          logger.debug(`Cache expiration ran and found no entries to remove.`);
+        }
+      }
+      this._isRunning = false;
+      if (this._rerunRequested) {
+        this._rerunRequested = false;
+        dontWaitFor(this.expireEntries());
+      }
+    }
+    async updateTimestamp(url) {
+      if (true) {
+        finalAssertExports.isType(url, "string", {
+          moduleName: "workbox-expiration",
+          className: "CacheExpiration",
+          funcName: "updateTimestamp",
+          paramName: "url"
+        });
+      }
+      await this._timestampModel.setTimestamp(url, Date.now());
+    }
+    async isURLExpired(url) {
+      if (!this._maxAgeSeconds) {
+        if (true) {
+          throw new WorkboxError(`expired-test-without-max-age`, {
+            methodName: "isURLExpired",
+            paramName: "maxAgeSeconds"
+          });
+        }
+        return false;
+      } else {
+        const timestamp = await this._timestampModel.getTimestamp(url);
+        const expireOlderThan = Date.now() - this._maxAgeSeconds * 1e3;
+        return timestamp !== void 0 ? timestamp < expireOlderThan : true;
+      }
+    }
+    async delete() {
+      this._rerunRequested = false;
+      await this._timestampModel.expireEntries(Infinity);
+    }
+  };
+
+  // node_modules/workbox-core/registerQuotaErrorCallback.js
+  function registerQuotaErrorCallback(callback) {
+    if (true) {
+      finalAssertExports.isType(callback, "function", {
+        moduleName: "workbox-core",
+        funcName: "register",
+        paramName: "callback"
+      });
+    }
+    quotaErrorCallbacks.add(callback);
+    if (true) {
+      logger.log("Registered a callback to respond to quota errors.", callback);
+    }
+  }
+
+  // node_modules/workbox-expiration/ExpirationPlugin.js
+  var ExpirationPlugin = class {
+    constructor(config = {}) {
+      this.cachedResponseWillBeUsed = async ({ event, request, cacheName, cachedResponse }) => {
+        if (!cachedResponse) {
+          return null;
+        }
+        const isFresh = this._isResponseDateFresh(cachedResponse);
+        const cacheExpiration = this._getCacheExpiration(cacheName);
+        dontWaitFor(cacheExpiration.expireEntries());
+        const updateTimestampDone = cacheExpiration.updateTimestamp(request.url);
+        if (event) {
+          try {
+            event.waitUntil(updateTimestampDone);
+          } catch (error) {
+            if (true) {
+              if ("request" in event) {
+                logger.warn(`Unable to ensure service worker stays alive when updating cache entry for '${getFriendlyURL(event.request.url)}'.`);
+              }
+            }
+          }
+        }
+        return isFresh ? cachedResponse : null;
+      };
+      this.cacheDidUpdate = async ({ cacheName, request }) => {
+        if (true) {
+          finalAssertExports.isType(cacheName, "string", {
+            moduleName: "workbox-expiration",
+            className: "Plugin",
+            funcName: "cacheDidUpdate",
+            paramName: "cacheName"
+          });
+          finalAssertExports.isInstance(request, Request, {
+            moduleName: "workbox-expiration",
+            className: "Plugin",
+            funcName: "cacheDidUpdate",
+            paramName: "request"
+          });
+        }
+        const cacheExpiration = this._getCacheExpiration(cacheName);
+        await cacheExpiration.updateTimestamp(request.url);
+        await cacheExpiration.expireEntries();
+      };
+      if (true) {
+        if (!(config.maxEntries || config.maxAgeSeconds)) {
+          throw new WorkboxError("max-entries-or-age-required", {
+            moduleName: "workbox-expiration",
+            className: "Plugin",
+            funcName: "constructor"
+          });
+        }
+        if (config.maxEntries) {
+          finalAssertExports.isType(config.maxEntries, "number", {
+            moduleName: "workbox-expiration",
+            className: "Plugin",
+            funcName: "constructor",
+            paramName: "config.maxEntries"
+          });
+        }
+        if (config.maxAgeSeconds) {
+          finalAssertExports.isType(config.maxAgeSeconds, "number", {
+            moduleName: "workbox-expiration",
+            className: "Plugin",
+            funcName: "constructor",
+            paramName: "config.maxAgeSeconds"
+          });
+        }
+      }
+      this._config = config;
+      this._maxAgeSeconds = config.maxAgeSeconds;
+      this._cacheExpirations = /* @__PURE__ */ new Map();
+      if (config.purgeOnQuotaError) {
+        registerQuotaErrorCallback(() => this.deleteCacheAndMetadata());
+      }
+    }
+    _getCacheExpiration(cacheName) {
+      if (cacheName === cacheNames.getRuntimeName()) {
+        throw new WorkboxError("expire-custom-caches-only");
+      }
+      let cacheExpiration = this._cacheExpirations.get(cacheName);
+      if (!cacheExpiration) {
+        cacheExpiration = new CacheExpiration(cacheName, this._config);
+        this._cacheExpirations.set(cacheName, cacheExpiration);
+      }
+      return cacheExpiration;
+    }
+    _isResponseDateFresh(cachedResponse) {
+      if (!this._maxAgeSeconds) {
+        return true;
+      }
+      const dateHeaderTimestamp = this._getDateHeaderTimestamp(cachedResponse);
+      if (dateHeaderTimestamp === null) {
+        return true;
+      }
+      const now = Date.now();
+      return dateHeaderTimestamp >= now - this._maxAgeSeconds * 1e3;
+    }
+    _getDateHeaderTimestamp(cachedResponse) {
+      if (!cachedResponse.headers.has("date")) {
+        return null;
+      }
+      const dateHeader = cachedResponse.headers.get("date");
+      const parsedDate = new Date(dateHeader);
+      const headerTime = parsedDate.getTime();
+      if (isNaN(headerTime)) {
+        return null;
+      }
+      return headerTime;
+    }
+    async deleteCacheAndMetadata() {
+      for (const [cacheName, cacheExpiration] of this._cacheExpirations) {
+        await self.caches.delete(cacheName);
+        await cacheExpiration.delete();
+      }
+      this._cacheExpirations = /* @__PURE__ */ new Map();
     }
   };
 
@@ -1768,8 +2241,19 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     "https://fonts.gstatic.com",
     "https://cdnjs.cloudflare.com"
   ];
-  registerRoute(({ url }) => {
-    let result = cachedStaticOrigins.includes(url.origin);
-    return result;
-  }, new NetworkFirst({ cacheName: "cdn-resources" }));
+  registerRoute(
+    ({ url }) => {
+      let result = cachedStaticOrigins.includes(url.origin);
+      return result;
+    },
+    new CacheFirst({
+      cacheName: "cdn-resources",
+      plugins: [
+        new ExpirationPlugin({
+          maxAgeSeconds: 7 * 24 * 60 * 60 * 4,
+          maxEntries: 20
+        })
+      ]
+    })
+  );
 })();
