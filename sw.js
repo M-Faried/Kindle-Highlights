@@ -1618,6 +1618,12 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     registerRoute(precacheRoute);
   }
 
+  // node_modules/workbox-precaching/createHandlerBoundToURL.js
+  function createHandlerBoundToURL(url) {
+    const precacheController2 = getOrCreatePrecacheController();
+    return precacheController2.createHandlerBoundToURL(url);
+  }
+
   // node_modules/workbox-precaching/precache.js
   function precache(entries) {
     const precacheController2 = getOrCreatePrecacheController();
@@ -1629,6 +1635,53 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     precache(entries);
     addRoute(options);
   }
+
+  // node_modules/workbox-routing/NavigationRoute.js
+  var NavigationRoute = class extends Route {
+    constructor(handler, { allowlist = [/./], denylist = [] } = {}) {
+      if (true) {
+        finalAssertExports.isArrayOfClass(allowlist, RegExp, {
+          moduleName: "workbox-routing",
+          className: "NavigationRoute",
+          funcName: "constructor",
+          paramName: "options.allowlist"
+        });
+        finalAssertExports.isArrayOfClass(denylist, RegExp, {
+          moduleName: "workbox-routing",
+          className: "NavigationRoute",
+          funcName: "constructor",
+          paramName: "options.denylist"
+        });
+      }
+      super((options) => this._match(options), handler);
+      this._allowlist = allowlist;
+      this._denylist = denylist;
+    }
+    _match({ url, request }) {
+      if (request && request.mode !== "navigate") {
+        return false;
+      }
+      const pathnameAndSearch = url.pathname + url.search;
+      for (const regExp of this._denylist) {
+        if (regExp.test(pathnameAndSearch)) {
+          if (true) {
+            logger.log(`The navigation route ${pathnameAndSearch} is not being used, since the URL matches this denylist pattern: ${regExp.toString()}`);
+          }
+          return false;
+        }
+      }
+      if (this._allowlist.some((regExp) => regExp.test(pathnameAndSearch))) {
+        if (true) {
+          logger.debug(`The navigation route ${pathnameAndSearch} is being used.`);
+        }
+        return true;
+      }
+      if (true) {
+        logger.log(`The navigation route ${pathnameAndSearch} is not being used, since the URL being navigated to doesn't match the allowlist.`);
+      }
+      return false;
+    }
+  };
 
   // node_modules/workbox-strategies/utils/messages.js
   var messages2 = {
@@ -2238,6 +2291,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
   var CACHE_EXPIRY = 604800;
   var MAX_ENTRIES = 30;
   precacheAndRoute([{"revision":"d990a69767f9720baa2c10ba982f6fee","url":"static/js/263.4344aee5.chunk.js"},{"revision":"a65ac32f8481c5b449f1e2c9c2703621","url":"static/js/main.c094c3cf.js"},{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"774984659eeedda4928e401aca41ba43","url":"index.html"},{"revision":"5d1482c9a8e6f271473586e299776987","url":"static/css/main.8facd102.css"},{"revision":"7e7762481de487fc46d67399ca074547","url":"asset-manifest.json"},{"revision":"25e19f8be37ecb6dbacbb83ed721e9d2","url":"manifest.json"},{"revision":"88c398c1b79d2739c03d13b6c4e6d245","url":"images/book.svg"},{"revision":"90d9be86fffaf1c5974f610b027a4101","url":"images/undraw_book_lover_mkck.svg"},{"revision":"0ca87086fbfb51d0971506a1c0893408","url":"images/logo_maskable.png"},{"revision":"4ed95f19dc5ac799d73f9d8887a9c5e9","url":"images/logo192.png"},{"revision":"d0f4eecbc849dccc9891372924dad401","url":"images/logo512.png"},{"revision":"696759996af7d3dd6ccf256061008efc","url":"images/logo64.png"},{"revision":"9926e49f8dcc7295386bae51892d58b4","url":"images/spinner.gif"},{"revision":"388ed88eec82ddeacbf877ee7dc4b225","url":"robots.txt"},{"revision":"1ca8f5251f5e7316ec970cae89ea80c9","url":"static/js/main.c094c3cf.js.LICENSE.txt"}]);
+  registerRoute(new NavigationRoute(createHandlerBoundToURL("/index.html")));
   var staticResourceOrigins = [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
