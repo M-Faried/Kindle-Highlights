@@ -2329,7 +2329,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
   };
 
   // src/sw.js
-  precacheAndRoute([{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"55a8d5bd69a0031812fd0a54167f70ff","url":"index.html"}]);
+  precacheAndRoute([{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"f64b14ff317d0a228631139bad3d1330","url":"index.html"}]);
   var cachedStaticOrigins = [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
