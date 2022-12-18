@@ -2235,12 +2235,13 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
   };
 
   // src/sw.js
-  precacheAndRoute([{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"3a2ccddd2807976fd26ba58fec40d40b","url":"index.html"}]);
+  precacheAndRoute([{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"5c4930d8b93e8e26b4d2c2aa0ee2d499","url":"index.html"}]);
   var cachedStaticOrigins = [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
     "https://cdnjs.cloudflare.com"
   ];
+  var CACHE_EXPIRY = 604800;
   registerRoute(
     ({ url }) => {
       let result = cachedStaticOrigins.includes(url.origin);
@@ -2250,7 +2251,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
       cacheName: "cdn-resources",
       plugins: [
         new ExpirationPlugin({
-          maxAgeSeconds: 7 * 24 * 60 * 60 * 4,
+          maxAgeSeconds: CACHE_EXPIRY,
           maxEntries: 20
         })
       ]
