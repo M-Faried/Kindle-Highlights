@@ -2241,6 +2241,10 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     "https://fonts.gstatic.com",
     "https://cdnjs.cloudflare.com"
   ];
+  var cachedSiteResourcesOrigins = [
+    "http://localhost:3000",
+    "https://m-faried.github.io/Kindle-Highlights"
+  ];
   var CACHE_EXPIRY = 604800;
   registerRoute(
     ({ url }) => {
@@ -2249,6 +2253,21 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     },
     new CacheFirst({
       cacheName: "cdn-resources",
+      plugins: [
+        new ExpirationPlugin({
+          maxAgeSeconds: CACHE_EXPIRY,
+          maxEntries: 20
+        })
+      ]
+    })
+  );
+  registerRoute(
+    ({ url }) => {
+      let result = cachedSiteResourcesOrigins.includes(url.origin);
+      return result;
+    },
+    new CacheFirst({
+      cacheName: "site-resources",
       plugins: [
         new ExpirationPlugin({
           maxAgeSeconds: CACHE_EXPIRY,
