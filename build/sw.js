@@ -2234,6 +2234,100 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     }
   };
 
+  // node_modules/workbox-cacheable-response/_version.js
+  try {
+    self["workbox:cacheable-response:6.5.3"] && _();
+  } catch (e) {
+  }
+
+  // node_modules/workbox-cacheable-response/CacheableResponse.js
+  var CacheableResponse = class {
+    constructor(config = {}) {
+      if (true) {
+        if (!(config.statuses || config.headers)) {
+          throw new WorkboxError("statuses-or-headers-required", {
+            moduleName: "workbox-cacheable-response",
+            className: "CacheableResponse",
+            funcName: "constructor"
+          });
+        }
+        if (config.statuses) {
+          finalAssertExports.isArray(config.statuses, {
+            moduleName: "workbox-cacheable-response",
+            className: "CacheableResponse",
+            funcName: "constructor",
+            paramName: "config.statuses"
+          });
+        }
+        if (config.headers) {
+          finalAssertExports.isType(config.headers, "object", {
+            moduleName: "workbox-cacheable-response",
+            className: "CacheableResponse",
+            funcName: "constructor",
+            paramName: "config.headers"
+          });
+        }
+      }
+      this._statuses = config.statuses;
+      this._headers = config.headers;
+    }
+    isResponseCacheable(response) {
+      if (true) {
+        finalAssertExports.isInstance(response, Response, {
+          moduleName: "workbox-cacheable-response",
+          className: "CacheableResponse",
+          funcName: "isResponseCacheable",
+          paramName: "response"
+        });
+      }
+      let cacheable = true;
+      if (this._statuses) {
+        cacheable = this._statuses.includes(response.status);
+      }
+      if (this._headers && cacheable) {
+        cacheable = Object.keys(this._headers).some((headerName) => {
+          return response.headers.get(headerName) === this._headers[headerName];
+        });
+      }
+      if (true) {
+        if (!cacheable) {
+          logger.groupCollapsed(`The request for '${getFriendlyURL(response.url)}' returned a response that does not meet the criteria for being cached.`);
+          logger.groupCollapsed(`View cacheability criteria here.`);
+          logger.log(`Cacheable statuses: ` + JSON.stringify(this._statuses));
+          logger.log(`Cacheable headers: ` + JSON.stringify(this._headers, null, 2));
+          logger.groupEnd();
+          const logFriendlyHeaders = {};
+          response.headers.forEach((value, key) => {
+            logFriendlyHeaders[key] = value;
+          });
+          logger.groupCollapsed(`View response status and headers here.`);
+          logger.log(`Response status: ${response.status}`);
+          logger.log(`Response headers: ` + JSON.stringify(logFriendlyHeaders, null, 2));
+          logger.groupEnd();
+          logger.groupCollapsed(`View full response details here.`);
+          logger.log(response.headers);
+          logger.log(response);
+          logger.groupEnd();
+          logger.groupEnd();
+        }
+      }
+      return cacheable;
+    }
+  };
+
+  // node_modules/workbox-cacheable-response/CacheableResponsePlugin.js
+  var CacheableResponsePlugin = class {
+    constructor(config) {
+      this.cacheWillUpdate = async ({ response }) => {
+        if (this._cacheableResponse.isResponseCacheable(response)) {
+          return response;
+        }
+        return null;
+      };
+      this._cacheableResponse = new CacheableResponse(config);
+    }
+  };
+
   // src/sw.js
   precacheAndRoute([{"revision":"67236bfb244650bd60da99eb444010e9","url":"404.html"},{"revision":"5c4930d8b93e8e26b4d2c2aa0ee2d499","url":"index.html"}]);
   var cachedStaticOrigins = [
@@ -2241,37 +2335,64 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
     "https://fonts.gstatic.com",
     "https://cdnjs.cloudflare.com"
   ];
-  var cachedSiteResourcesOrigins = [
-    "http://localhost:3000",
-    "https://m-faried.github.io/Kindle-Highlights"
-  ];
   var CACHE_EXPIRY = 604800;
+  var MAX_ENTRIES = 20;
   registerRoute(
     ({ url }) => {
       let result = cachedStaticOrigins.includes(url.origin);
       return result;
     },
     new CacheFirst({
-      cacheName: "cdn-resources",
+      cacheName: "cdn",
       plugins: [
         new ExpirationPlugin({
           maxAgeSeconds: CACHE_EXPIRY,
-          maxEntries: 20
+          maxEntries: MAX_ENTRIES
         })
       ]
     })
   );
   registerRoute(
-    ({ url }) => {
-      let result = cachedSiteResourcesOrigins.includes(url.origin);
-      return result;
-    },
+    ({ request }) => request.destination === "image",
     new CacheFirst({
-      cacheName: "site-resources",
+      cacheName: "images",
       plugins: [
+        new CacheableResponsePlugin({
+          statuses: [0, 200]
+        }),
         new ExpirationPlugin({
-          maxAgeSeconds: CACHE_EXPIRY,
-          maxEntries: 20
+          maxEntries: MAX_ENTRIES,
+          maxAgeSeconds: CACHE_EXPIRY
+        })
+      ]
+    })
+  );
+  registerRoute(
+    ({ request }) => request.destination === "script",
+    new CacheFirst({
+      cacheName: "scripts",
+      plugins: [
+        new CacheableResponsePlugin({
+          statuses: [0, 200]
+        }),
+        new ExpirationPlugin({
+          maxEntries: MAX_ENTRIES,
+          maxAgeSeconds: CACHE_EXPIRY
+        })
+      ]
+    })
+  );
+  registerRoute(
+    ({ request }) => request.destination === "style",
+    new CacheFirst({
+      cacheName: "styles",
+      plugins: [
+        new CacheableResponsePlugin({
+          statuses: [0, 200]
+        }),
+        new ExpirationPlugin({
+          maxEntries: MAX_ENTRIES,
+          maxAgeSeconds: CACHE_EXPIRY
         })
       ]
     })
