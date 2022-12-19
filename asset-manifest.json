@@ -1,12 +1,12 @@
 {
   "files": {
-    "main.css": "/Kindle-Highlights/static/css/main.8facd102.css",
-    "main.js": "/Kindle-Highlights/static/js/main.c094c3cf.js",
+    "main.css": "/Kindle-Highlights/static/css/main.dbb8deb6.css",
+    "main.js": "/Kindle-Highlights/static/js/main.27ce8437.js",
     "static/js/263.4344aee5.chunk.js": "/Kindle-Highlights/static/js/263.4344aee5.chunk.js",
     "index.html": "/Kindle-Highlights/index.html"
   },
   "entrypoints": [
-    "static/css/main.8facd102.css",
-    "static/js/main.c094c3cf.js"
+    "static/css/main.dbb8deb6.css",
+    "static/js/main.27ce8437.js"
   ]
 }
