@@ -28,9 +28,9 @@ The React source code is not avilable for public, only the compiled code is avai
 ## 📷 Preview:
 <br>
 <p align="center">
-    <img src="./screenshots/06.PNG" alt="screen1" width="300"/>
-    <img src="./screenshots/08.PNG" alt="screen1" width="300"/>
-    <img src="./screenshots/10.PNG" alt="screen1" width="300"/>
+    <img src="./screenshots/06.PNG" alt="screen1" width="250"/>
+    <img src="./screenshots/08.PNG" alt="screen1" width="250"/>
+    <img src="./screenshots/10.PNG" alt="screen1" width="250"/>
     <br>
     <br>
     <br>
