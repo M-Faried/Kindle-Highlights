@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/Kindle-Highlights/static/css/main.9e799b60.css",
-    "main.js": "/Kindle-Highlights/static/js/main.b61ee28a.js",
+    "main.css": "/Kindle-Highlights/static/css/main.b253487c.css",
+    "main.js": "/Kindle-Highlights/static/js/main.747c0263.js",
     "static/js/577.1cdbdc14.chunk.js": "/Kindle-Highlights/static/js/577.1cdbdc14.chunk.js",
     "static/media/BalooTamma2-VariableFont_wght.ttf": "/Kindle-Highlights/static/media/BalooTamma2-VariableFont_wght.a62e8cff7e3e7a86a809.ttf",
     "index.html": "/Kindle-Highlights/index.html"
   },
   "entrypoints": [
-    "static/css/main.9e799b60.css",
-    "static/js/main.b61ee28a.js"
+    "static/css/main.b253487c.css",
+    "static/js/main.747c0263.js"
   ]
 }
