@@ -28,19 +28,25 @@ The React source code is not avilable for public, only the compiled code is avai
 ## 📷 Preview:
 <br>
 <p align="center">
-    <img src="./screenshots/06.PNG" alt="screen1" width="250"/>
-    <img src="./screenshots/08.PNG" alt="screen1" width="250"/>
-    <img src="./screenshots/10.PNG" alt="screen1" width="250"/>
+    <img src="./screenshots/01.PNG" alt="screen1" width="350"/>
+    <img src="./screenshots/02.jpg" alt="screen1" width="350"/>
+    <br>
+    <br>
+    <img src="./screenshots/03.png" alt="screen1" width="350"/>
+    <img src="./screenshots/04.png" alt="screen1" width="350"/>
     <br>
     <br>
     <br>
-    <img src="./screenshots/01.PNG" alt="screen1" width="800"/>
+    <img src="./screenshots/05.png" alt="screen1" width="250"/>
     <br>
     <br>
-    <img src="./screenshots/02.PNG" alt="screen1" width="800"/>
+    <img src="./screenshots/06.png" alt="screen1" width="250"/>
     <br>
     <br>
-    <img src="./screenshots/03.PNG" alt="screen1" width="800"/>    
+    <img src="./screenshots/07.png" alt="screen1" width="250"/>    
+    <br>
+    <br>
+    <img src="./screenshots/08.png" alt="screen1" width="250"/>    
 </p>
 
 <br>
