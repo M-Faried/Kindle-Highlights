@@ -32,21 +32,20 @@ The React source code is not avilable for public, only the compiled code is avai
     <img src="./screenshots/02.jpg" alt="screen1" width="350"/>
     <br>
     <br>
-    <img src="./screenshots/03.png" alt="screen1" width="350"/>
+    <img src="./screenshots/03.PNG" alt="screen1" width="350"/>
     <img src="./screenshots/04.png" alt="screen1" width="350"/>
-    <br>
     <br>
     <br>
     <img src="./screenshots/05.png" alt="screen1" width="250"/>
     <br>
     <br>
-    <img src="./screenshots/06.png" alt="screen1" width="250"/>
+    <img src="./screenshots/06.PNG" alt="screen1" width="250"/>
     <br>
     <br>
-    <img src="./screenshots/07.png" alt="screen1" width="250"/>    
+    <img src="./screenshots/07.PNG" alt="screen1" width="250"/>    
     <br>
     <br>
-    <img src="./screenshots/08.png" alt="screen1" width="250"/>    
+    <img src="./screenshots/08.PNG" alt="screen1" width="250"/>    
 </p>
 
 <br>
